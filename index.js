@@ -1,7 +1,13 @@
-let currentAngle=0.0;
+var currentAngle;
+var flag;
 let currentRotation=[0,1];
-function main() {
+let uRotationVector;
 
+function main() {
+  if(flag!=0){
+    currentAngle=0.0;
+    flag=0;
+  }
   // Inisiasi kanvas WebGL
   var leftCanvas = document.getElementById("leftCanvas");
   var rightCanvas = document.getElementById("rightCanvas");
@@ -165,8 +171,13 @@ resizeCanvas();
   // Definisi Shaders
   var leftVertexShaderCode = `
   attribute vec2 aPosition;
+  uniform vec2 uRotationVector;
   void main(void) {
-    gl_Position = vec4(aPosition, -0.5, 1.0);
+    vec2 rotatedPosition=vec2(
+        aPosition.x*uRotationVector.y + aPosition.y *uRotationVector.x,
+        aPosition.y*uRotationVector.y - aPosition.x *uRotationVector.x
+    );
+    gl_Position = vec4(rotatedPosition, -0.5, 1.0);
   }
 `
 var leftFragmentShaderCode = `
@@ -232,6 +243,12 @@ var leftFragmentShaderCode = `
 
   // Persiapan tampilan layar dan mulai menggambar secara berulang (animasi)
   function render() {
+    let radians = currentAngle * Math.PI / 180.0;
+    currentRotation[0]=Math.sin(radians);
+    currentRotation[1]=Math.cos(radians);
+    uRotationVector = leftGL.getUniformLocation(leftShaderProgram,"uRotationVector");
+    currentAngle=(currentAngle+0.5)%360;
+    leftGL.uniform2fv(uRotationVector,currentRotation);
     leftGL.clear(leftGL.COLOR_BUFFER_BIT);
     leftGL.drawArrays(leftGL.TRIANGLES, 0, rectangleVertices.length/2);
     rightGL.clear(rightGL.COLOR_BUFFER_BIT | rightGL.DEPTH_BUFFER_BIT);
@@ -247,5 +264,6 @@ var leftFragmentShaderCode = `
   console.log(rightGL.canvas.height,rightGL.canvas.width)
 
 
+  
   render();
 }
