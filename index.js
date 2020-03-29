@@ -1,3 +1,5 @@
+let currentAngle=0.0;
+let currentRotation=[0,1];
 function main() {
 
   // Inisiasi kanvas WebGL
@@ -6,12 +8,108 @@ function main() {
   var leftGL = leftCanvas.getContext("webgl");
   var rightGL = rightCanvas.getContext("webgl");
 
+  // leftCanvas.style.width = window.innerWidth/2 + "px";
+  // leftCanvas.style.height = window.innerHeight + "px";
+  // rightCanvas.style.width = window.innerWidth/2 + "px";
+  // rightCanvas.style.height = window.innerHeight + "px";
+
+function resizeCanvas() {
+  leftCanvas.style.width = window.innerWidth/2-20 + "px";
+  rightCanvas.style.width = window.innerWidth/2-20 + "px";
+  setTimeout(function() {
+    leftCanvas.style.height = window.innerHeight + "px";
+    rightCanvas.style.height = window.innerHeight + "px";
+  }, 0);
+};
+
+// Webkit/Blink will fire this on load, but Gecko doesn't.
+window.onresize = resizeCanvas;
+
+// So we fire it manually...
+resizeCanvas();
+
+  // set the s
   // Inisiasi verteks persegi
   var rectangleVertices = [
-    -0.5,  0.5,
-    -0.5, -0.5,
-    0.5, -0.5,
-    0.5,  0.5
+    0.055, 0.5,//garis1
+    -0.055, 0.5,
+    -0.06, 0.49,
+    0.055, 0.5,
+    -0.06, 0.49,
+    0.06, 0.49,
+    -0.065, 0.475,//garis2
+    -0.07, 0.465,
+    0.065,0.475,
+    -0.07, 0.465,
+    0.065,0.475,
+    0.07, 0.465,
+    -0.075, 0.45,//garis3
+    -0.08, 0.44,
+    0.075,0.45,
+    -0.08, 0.44,
+    0.075,0.45,
+    0.08, 0.44,
+    -0.4,-0.27,//garis1 bawah
+    0.4,-0.27,
+    -0.4,-0.28,
+    0.4,-0.27,
+    -0.4,-0.28,
+    0.4,-0.28,
+    -0.4,-0.3,//garis2 bawah
+    0.4,-0.3,
+    -0.4,-0.31,
+    0.4,-0.3,
+    -0.4,-0.31,
+    0.4,-0.31,
+    -0.4,-0.33,//garis3 bawah
+    0.4,-0.33,
+    -0.4,-0.34,
+    0.4,-0.33,
+    -0.4,-0.34,
+    0.4,-0.34,
+    -0.25,0.4,//garis1tengah
+    0.25,0.4,
+    -0.25,0.36,
+    0.25,0.4,
+    -0.25,0.36,
+    0.25,0.36,
+    -0.3,0.28,//garis2 tengah
+    0.3,0.28,
+    -0.3,0.24,
+    0.3,0.28,
+    -0.3,0.24,
+    0.3,0.24,
+    -0.35,0.14,//garis3 tengah
+    0.35,0.14,
+    -0.35,0.1,
+    0.35,0.14,
+    -0.35,0.1,
+    0.35,0.1,
+    -0.45,-0.2,//garis4 tengah
+    0.45,-0.2,
+    -0.45,-0.16,
+    0.45,-0.2,
+    -0.45,-0.16,
+    0.45,-0.16,
+    
+    0,  0.6,//kiri1
+    -0.5, -0.6,
+    0,    0.7,
+    0,  0.6,//kanan1
+    0.5, -0.6,
+    0,    0.7,
+    -0.58, -0.6,//kiri1
+    0,  0.7,
+    -0.5, -0.6,
+    0.5, -0.6,//kanan2
+    0,    0.7,
+    0.58, -0.6,
+    0.2,  0.4,//tengah1
+    -0.2,  0.4,
+    -0.4, -0.2,
+    0.2,  0.4,//tengah2
+    -0.4, -0.2,
+    0.4,  -0.2
   ];
 
   // Inisiasi verteks kubus
@@ -122,6 +220,7 @@ var leftFragmentShaderCode = `
   leftGL.bindBuffer(leftGL.ARRAY_BUFFER, leftVertexBuffer);
   var leftPosition = leftGL.getAttribLocation(leftShaderProgram, "aPosition");
   leftGL.vertexAttribPointer(leftPosition, 2, leftGL.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
+
   leftGL.enableVertexAttribArray(leftPosition);
   rightGL.bindBuffer(rightGL.ARRAY_BUFFER, rightVertexBuffer);
   var rightPosition = rightGL.getAttribLocation(rightShaderProgram, "aPosition");
@@ -134,7 +233,7 @@ var leftFragmentShaderCode = `
   // Persiapan tampilan layar dan mulai menggambar secara berulang (animasi)
   function render() {
     leftGL.clear(leftGL.COLOR_BUFFER_BIT);
-    leftGL.drawArrays(leftGL.TRIANGLE_FAN, 0, 4);
+    leftGL.drawArrays(leftGL.TRIANGLES, 0, rectangleVertices.length/2);
     rightGL.clear(rightGL.COLOR_BUFFER_BIT | rightGL.DEPTH_BUFFER_BIT);
     rightGL.drawArrays(rightGL.TRIANGLES, 0, 36);
     requestAnimationFrame(render);
@@ -144,5 +243,9 @@ var leftFragmentShaderCode = `
   rightGL.clearColor(0.0, 0.0, 0.0, 1.0);
   rightGL.enable(rightGL.DEPTH_TEST);
   rightGL.viewport(0, (leftGL.canvas.height - leftGL.canvas.width)/2, rightGL.canvas.width, rightGL.canvas.width);
+  console.log(leftGL.canvas.height,leftGL.canvas.width)
+  console.log(rightGL.canvas.height,rightGL.canvas.width)
+
+
   render();
 }
