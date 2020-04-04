@@ -2,10 +2,17 @@ var currentAngle;
 var flag;
 let currentRotation=[0,1];
 let uRotationVector;
+var currentAngle3D;
+var currentAngle3DX;
+var flag3D;
+let currentRotation3D=[0,0,1];
+let uRotationVector3D;
 
 function main() {
   if(flag!=0){
     currentAngle=0.0;
+    currentAngle3D=0.0;
+    currentAngle3DX=0.0;
     flag=0;
   }
   // Inisiasi kanvas WebGL
@@ -202,12 +209,25 @@ var leftFragmentShaderCode = `
 `
   var rightVertexShaderCode = `
     attribute vec3 aPosition;
+    uniform vec3 uRotationVector;
+    uniform vec3 uRotationVectorX;
     attribute vec3 aColor;
     varying vec3 vColor;
     void main(void) {
+      vec3 rotatedPosition=vec3(
+        aPosition.x*uRotationVector.z + aPosition.z *uRotationVector.x,
+        aPosition.y-0.5,
+        aPosition.z*uRotationVector.z - aPosition.x *uRotationVector.x
+      );
+      rotatedPosition=vec3(
+        rotatedPosition.x,
+        rotatedPosition.y*uRotationVectorX.z + rotatedPosition.z *uRotationVectorX.y,
+        rotatedPosition.z*uRotationVectorX.z - rotatedPosition.y *uRotationVectorX.y
+      );
       vColor = aColor;
-      gl_Position = vec4(aPosition.xy, aPosition.z - 1.0, 1.0);
+      gl_Position = vec4(rotatedPosition , 1.0);
     }
+    
   `
   var rightFragmentShaderCode = `
     precision mediump float;
@@ -245,8 +265,8 @@ var leftFragmentShaderCode = `
   leftGL.bindBuffer(leftGL.ARRAY_BUFFER, leftVertexBuffer);
   var leftPosition = leftGL.getAttribLocation(leftShaderProgram, "aPosition");
   leftGL.vertexAttribPointer(leftPosition, 2, leftGL.FLOAT, false, 2 * Float32Array.BYTES_PER_ELEMENT, 0);
-
   leftGL.enableVertexAttribArray(leftPosition);
+
   rightGL.bindBuffer(rightGL.ARRAY_BUFFER, rightVertexBuffer);
   var rightPosition = rightGL.getAttribLocation(rightShaderProgram, "aPosition");
   rightGL.vertexAttribPointer(rightPosition, 3, rightGL.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 0);
@@ -257,13 +277,30 @@ var leftFragmentShaderCode = `
 
   // Persiapan tampilan layar dan mulai menggambar secara berulang (animasi)
   function render() {
-    // let radians = currentAngle * Math.PI / 180.0;
-    let radians = 1 * Math.PI / 180.0;
+    let radians = currentAngle * Math.PI / 180.0; //putar 2D
+    // let radians = 1 * Math.PI / 180.0;
     currentRotation[0]=Math.sin(radians);
     currentRotation[1]=Math.cos(radians);
     uRotationVector = leftGL.getUniformLocation(leftShaderProgram,"uRotationVector");
     currentAngle=(currentAngle+0.5)%360;
     leftGL.uniform2fv(uRotationVector,currentRotation);
+    
+    let radians3D = currentAngle3D * Math.PI / 180.0; //putar 3D terhadap sumbu Y
+    currentRotation3D[0]=Math.sin(radians3D);
+    currentRotation3D[1]=0;
+    currentRotation3D[2]=Math.cos(radians3D);
+    uRotationVector3D = rightGL.getUniformLocation(rightShaderProgram,"uRotationVector");
+    currentAngle3D=(currentAngle3D+0.75)%360;
+    rightGL.uniform3fv(uRotationVector3D,currentRotation3D);
+
+    radians3D = currentAngle3DX * Math.PI / 180.0; //putar 3D terhadap sumbu X
+    currentRotation3D[1]=Math.sin(radians3D);
+    currentRotation3D[0]=0;
+    currentRotation3D[2]=Math.cos(radians3D);
+    uRotationVector3D = rightGL.getUniformLocation(rightShaderProgram,"uRotationVectorX");
+    currentAngle3DX=(currentAngle3DX+0.25)%360;
+    rightGL.uniform3fv(uRotationVector3D,currentRotation3D);
+
     leftGL.clear(leftGL.COLOR_BUFFER_BIT);
     leftGL.drawArrays(leftGL.TRIANGLES, 0, rectangleVertices.length/2);
     rightGL.clear(rightGL.COLOR_BUFFER_BIT | rightGL.DEPTH_BUFFER_BIT);
@@ -276,7 +313,6 @@ var leftFragmentShaderCode = `
   rightGL.enable(rightGL.DEPTH_TEST);
   rightGL.viewport(0, (leftGL.canvas.height - leftGL.canvas.width)/2, rightGL.canvas.width, rightGL.canvas.width);
   console.log(leftGL.canvas.height,leftGL.canvas.width)
-  console.log(rightGL.canvas.height,rightGL.canvas.width)
 
 
   
