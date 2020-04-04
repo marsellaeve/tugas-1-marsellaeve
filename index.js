@@ -121,42 +121,56 @@ resizeCanvas();
   // Inisiasi verteks kubus
   var cubeVertices = [];
   var cubePoints = [
-    [-0.5,  0.5,  0.5],   // A, 0
-    [-0.5, -0.5,  0.5],   // B, 1
-    [ 0.5, -0.5,  0.5],   // C, 2 
-    [ 0.5,  0.5,  0.5],   // D, 3
-    [-0.5,  0.5, -0.5],   // E, 4
-    [-0.5, -0.5, -0.5],   // F, 5
-    [ 0.5, -0.5, -0.5],   // G, 6
-    [ 0.5,  0.5, -0.5]    // H, 7 
+    [0.5,  0,  0.3],   // L y z x
+    [0.6, 0,  0.37],   // K
+    [ 0, 0.8,  0],   // J
+    [ 0,  1,  0],   // I
+    [-0.5,  0, 0.3],   // D
+    [-0.6, 0,  0.37],   // B
+    [0,  0, -0.6],   // C
+    [0, 0,  -0.71],   // A
+    
+    // [-0.5,  0.5, -0.5],   // E, 4
+    // [-0.5, -0.5, -0.5],   // F, 5
+    // [ 0.5, -0.5, -0.5],   // G, 6
+    // [ 0.5,  0.5, -0.5]    // H, 7 
   ];
   var cubeColors = [
-      [],
+      [1.0, 1.0, 0.0],
       [1.0, 0.0, 0.0],    // merah
       [0.0, 1.0, 0.0],    // hijau
       [0.0, 0.0, 1.0],    // biru
       [1.0, 1.0, 1.0],    // putih
       [1.0, 0.5, 0.0],    // oranye
       [1.0, 1.0, 0.0],    // kuning
-      []
+      [1.0, 0.0, 0.0]
   ];
-  function quad(a, b, c, d) {
-      var indices = [a, b, c, c, d, a];
-      for (var i=0; i<indices.length; i++) {
-          for (var j=0; j<3; j++) {
-              cubeVertices.push(cubePoints[indices[i]][j]);
-          }
-          for (var j=0; j<3; j++) {
-              cubeVertices.push(cubeColors[a][j]);
-          }
-      }
+
+  function tri(a, b, c){
+    var indices = [a, b, c];
+    for (var i=0; i<indices.length; i++) {
+        for (var j=0; j<3; j++) {
+            cubeVertices.push(cubePoints[indices[i]][j]);
+        }
+        for (var j=0; j<3; j++) {
+            cubeVertices.push(cubeColors[a][j]);
+        }
+    }
   }
-  quad(1, 2, 3, 0); // Kubus depan
-  quad(2, 6, 7, 3); // Kubus kanan
-  quad(3, 7, 4, 0); // Kubus atas
-  quad(4, 5, 1, 0); // Kubus kiri
-  quad(5, 4, 7, 6); // Kubus belakang
-  quad(6, 2, 1, 5); // Kubus bawah
+
+  function quad(a, b, c, d) {
+    tri(a,b,c);
+    tri(c,d,a);
+  }
+  quad(0, 1, 3, 2); // Kubus depan
+  quad(4, 5, 3, 2); // Kubus kanan
+  quad(6, 7, 3, 2); // Kubus kanan
+  // tri(2,0,4);
+  // quad(3, 7, 4, 0); // Kubus atas
+  // quad(4, 5, 1, 0); // Kubus kiri
+  // quad(5, 4, 7, 6); // Kubus belakang
+  // quad(6, 2, 1, 5); // Kubus bawah
+  console.log(cubeVertices.length);
 
   // Inisiasi VBO (Vertex Buffer Object)
   var leftVertexBuffer = leftGL.createBuffer();
@@ -243,7 +257,8 @@ var leftFragmentShaderCode = `
 
   // Persiapan tampilan layar dan mulai menggambar secara berulang (animasi)
   function render() {
-    let radians = currentAngle * Math.PI / 180.0;
+    // let radians = currentAngle * Math.PI / 180.0;
+    let radians = 1 * Math.PI / 180.0;
     currentRotation[0]=Math.sin(radians);
     currentRotation[1]=Math.cos(radians);
     uRotationVector = leftGL.getUniformLocation(leftShaderProgram,"uRotationVector");
@@ -252,7 +267,7 @@ var leftFragmentShaderCode = `
     leftGL.clear(leftGL.COLOR_BUFFER_BIT);
     leftGL.drawArrays(leftGL.TRIANGLES, 0, rectangleVertices.length/2);
     rightGL.clear(rightGL.COLOR_BUFFER_BIT | rightGL.DEPTH_BUFFER_BIT);
-    rightGL.drawArrays(rightGL.TRIANGLES, 0, 36);
+    rightGL.drawArrays(rightGL.TRIANGLES, 0, cubeVertices.length/6);
     requestAnimationFrame(render);
   }
   leftGL.clearColor(0.7, 0.7, 0.7, 1.0);
