@@ -2,6 +2,8 @@ var currentAngle;
 var flag;
 let currentRotation=[0,1];
 let uRotationVector;
+let rangeInv3D;
+let f3D; let near3D; let far3D; let aspect3D;
 var currentAngle3D;
 var currentAngle3DX;
 var flag3D;
@@ -128,7 +130,7 @@ resizeCanvas();
   // Inisiasi verteks kubus
   var cubeVertices = [];
   var cubePoints = [
-    [0.5,  0,  0.3],   // L y z x
+    [0.5,  0,  0.3],   // L
     [0.6, 0,  0.37],   // K
     [ 0, 0.8,  0],   // J
     [ 0,  1,  0],   // I
@@ -211,24 +213,35 @@ var leftFragmentShaderCode = `
     attribute vec3 aPosition;
     uniform vec3 uRotationVector;
     uniform vec3 uRotationVectorX;
+    uniform float f;
+    uniform float rangeInv;
+    uniform float aspect;
+    uniform float near;
+    uniform float far;
     attribute vec3 aColor;
     varying vec3 vColor;
     void main(void) {
-      vec3 rotatedPosition=vec3(
-        aPosition.x*uRotationVector.z + aPosition.z *uRotationVector.x,
-        aPosition.y-0.5,
-        aPosition.z*uRotationVector.z - aPosition.x *uRotationVector.x
+      gl_Position=vec4(aPosition.x,aPosition.y-0.5,aPosition.z,0);
+      gl_Position=vec4(
+        gl_Position.x*uRotationVector.z + gl_Position.z *uRotationVector.x,
+        gl_Position.y,
+        gl_Position.z*uRotationVector.z - gl_Position.x *uRotationVector.x,
+        gl_Position.w
       );
-      rotatedPosition=vec3(
-        rotatedPosition.x,
-        rotatedPosition.y*uRotationVectorX.z + rotatedPosition.z *uRotationVectorX.y,
-        rotatedPosition.z*uRotationVectorX.z - rotatedPosition.y *uRotationVectorX.y
+
+      gl_Position=vec4(
+        gl_Position.x,
+        gl_Position.y*uRotationVectorX.z + gl_Position.z *uRotationVectorX.y,
+        gl_Position.z*uRotationVectorX.z - gl_Position.y *uRotationVectorX.y,
+        gl_Position.w
       );
+      gl_Position=vec4(gl_Position.x*f/aspect, gl_Position.y*f, gl_Position.z*(near+far)*rangeInv + gl_Position.w*near * far * rangeInv * 2.0,-gl_Position.z);
+
       vColor = aColor;
-      gl_Position = vec4(rotatedPosition , 1.0);
+      gl_Position = vec4(gl_Position.xyz, (1.5*-gl_Position.w)+2.5);
     }
-    
   `
+  
   var rightFragmentShaderCode = `
     precision mediump float;
     varying vec3 vColor;
@@ -274,8 +287,8 @@ var leftFragmentShaderCode = `
   var color = rightGL.getAttribLocation(rightShaderProgram, "aColor");
   rightGL.vertexAttribPointer(color, 3, rightGL.FLOAT, false, 6 * Float32Array.BYTES_PER_ELEMENT, 3 * Float32Array.BYTES_PER_ELEMENT);
   rightGL.enableVertexAttribArray(color);
-
-  // Persiapan tampilan layar dan mulai menggambar secara berulang (animasi)
+    
+    // Persiapan tampilan layar dan mulai menggambar secara berulang (animasi)
   function render() {
     let radians = currentAngle * Math.PI / 180.0; //putar 2D
     // let radians = 1 * Math.PI / 180.0;
@@ -300,21 +313,35 @@ var leftFragmentShaderCode = `
     uRotationVector3D = rightGL.getUniformLocation(rightShaderProgram,"uRotationVectorX");
     currentAngle3DX=(currentAngle3DX+0.25)%360;
     rightGL.uniform3fv(uRotationVector3D,currentRotation3D);
-
+    
+    var aspect=((window.innerWidth-20)/2)/window.innerHeight;
+    var near= 1;
+    var far=50;
+    var f = Math.tan( Math.PI * 0.5 - 0.5 * (Math.PI/3.0));
+    var rangeInv = 1.0 / (near - far);
+    f3D = rightGL.getUniformLocation(rightShaderProgram,"f");
+    rangeInv3D = rightGL.getUniformLocation(rightShaderProgram,"rangeInv");
+    near3D = rightGL.getUniformLocation(rightShaderProgram,"near");
+    far3D = rightGL.getUniformLocation(rightShaderProgram,"far");
+    aspect3D = rightGL.getUniformLocation(rightShaderProgram,"aspect");
+    rightGL.uniform1f(f3D,f);
+    rightGL.uniform1f(rangeInv3D,rangeInv);
+    rightGL.uniform1f(near3D,near);
+    rightGL.uniform1f(far3D,far);
+    rightGL.uniform1f(aspect3D,aspect);
     leftGL.clear(leftGL.COLOR_BUFFER_BIT);
     leftGL.drawArrays(leftGL.TRIANGLES, 0, rectangleVertices.length/2);
     rightGL.clear(rightGL.COLOR_BUFFER_BIT | rightGL.DEPTH_BUFFER_BIT);
     rightGL.drawArrays(rightGL.TRIANGLES, 0, cubeVertices.length/6);
     requestAnimationFrame(render);
   }
+
   leftGL.clearColor(0.7, 0.7, 0.7, 1.0);
   leftGL.viewport(0, (leftGL.canvas.height - leftGL.canvas.width)/2, leftGL.canvas.width, leftGL.canvas.width);
   rightGL.clearColor(0.0, 0.0, 0.0, 1.0);
   rightGL.enable(rightGL.DEPTH_TEST);
   rightGL.viewport(0, (leftGL.canvas.height - leftGL.canvas.width)/2, rightGL.canvas.width, rightGL.canvas.width);
   console.log(leftGL.canvas.height,leftGL.canvas.width)
-
-
   
   render();
 }
